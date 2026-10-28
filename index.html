@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f3ed" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121416" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Hotel Dashboard">
+  <meta name="description" content="Hotel Performance Dashboard — загрузка, средняя цена номера, выручка на доступный номер и операционная прибыль отеля.">
+  <title>Hotel Performance Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d2b3a'/%3E%3Cpath d='M16 6l8 10-8 10-8-10z' fill='none' stroke='%23c9a35f' stroke-width='1.8'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <p class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l7.5 9.5-7.5 9.5L4.5 12z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 7.5l3.6 4.5-3.6 4.5L8.4 12z" fill="currentColor"/></svg>
+        Hotel Performance Dashboard
+      </p>
+      <h1>Показатели пятизвёздочного отеля</h1>
+      <p class="period-line" id="periodLine"></p>
+    </div>
+  </header>
+
+  <div class="controls" id="controls">
+    <div class="wrap controls-row">
+      <div class="seg" role="group" aria-label="Тип периода">
+        <button type="button" data-mode="month">Месяц</button>
+        <button type="button" data-mode="ytd">С начала года</button>
+      </div>
+      <label class="select"><span class="sr">Месяц</span>
+        <select id="monthSel"></select>
+      </label>
+      <label class="select" id="yearWrap" hidden><span class="sr">Год</span>
+        <select id="yearSel"></select>
+      </label>
+      <span class="spacer"></span>
+      <button type="button" class="btn primary" id="openImport">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3m0 0L6 7m4-4l4 4M4 13v3h12v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Загрузить Excel
+      </button>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <p class="source" id="source"></p>
+
+    <section aria-labelledby="kpiTitle">
+      <h2 class="sr" id="kpiTitle">Ключевые показатели</h2>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="trendTitle">
+      <div class="panel-head">
+        <h2 id="trendTitle">Динамика по месяцам</h2>
+        <div class="tabs" id="metricTabs" role="group" aria-label="Показатель"></div>
+      </div>
+      <div class="legend" id="legend" role="group" aria-label="Линии на графике"></div>
+      <div id="trendChart"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="devTitle">
+      <div class="panel-head">
+        <h2 id="devTitle">Факт против бюджета и прошлого года</h2>
+        <p class="hint" id="devHint"></p>
+      </div>
+      <div class="legend static">
+        <span class="lg"><i class="sw bar-budget"></i>К бюджету</span>
+        <span class="lg"><i class="sw bar-py"></i>К прошлому году</span>
+      </div>
+      <div id="devChart"></div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Таблица по месяцам" id="tableWrap"></div>
+    </section>
+
+    <section class="notes" aria-labelledby="defTitle">
+      <h2 id="defTitle">Как считаются показатели</h2>
+      <dl>
+        <dt>Загрузка</dt><dd>проданные номеро-ночи ÷ доступные номеро-ночи.</dd>
+        <dt>Средняя цена номера</dt><dd>выручка от номеров ÷ проданные номеро-ночи.</dd>
+        <dt>Выручка на доступный номер (RevPAR)</dt><dd>выручка от номеров ÷ доступные номеро-ночи. Равна загрузке × средней цене.</dd>
+        <dt>Операционная прибыль</dt><dd>общая выручка − операционные расходы. Это рабочее определение прототипа; если у вас другая методика, её нужно заложить в расчёт.</dd>
+      </dl>
+      <p>За период из нескольких месяцев показатели считаются из сумм, а не как среднее по месяцам. Сравнение с бюджетом и прошлым годом показывается только если данные есть за все месяцы периода. Загрузка и маржа сравниваются в процентных пунктах (п.п.), остальное — в процентах.</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Данные обрабатываются только в вашем браузере и никуда не отправляются.</p>
+  </footer>
+
+  <dialog id="importDlg" aria-labelledby="importTitle">
+    <form method="dialog" class="dlg">
+      <div class="dlg-head">
+        <h2 id="importTitle">Загрузка данных из Excel</h2>
+        <button class="icon-btn" value="close" aria-label="Закрыть">×</button>
+      </div>
+      <p>Файл <b>.xlsx</b>, лист «Данные». Одна строка — один месяц одного сценария (Факт, Бюджет или Прошлый год). Колонки:</p>
+      <p class="cols" id="colsList"></p>
+      <label class="drop" id="drop">
+        <input type="file" id="fileInput" accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        <span class="drop-title">Выберите файл или перетащите сюда</span>
+        <span class="drop-sub">Файл не покидает ваш браузер</span>
+      </label>
+      <div class="errors" id="importErrors" role="alert" hidden></div>
+      <div class="dlg-actions">
+        <button type="button" class="btn" id="downloadExample">Скачать пример файла</button>
+        <button type="button" class="btn danger" id="resetDemo" hidden>Вернуть демо-данные</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/calc.js"></script>
+  <script src="js/format.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/xlsx.js"></script>
+  <script src="js/dataio.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
