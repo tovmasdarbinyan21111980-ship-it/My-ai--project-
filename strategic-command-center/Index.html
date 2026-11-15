@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<base target="_blank">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0e0f11">
+<title>Strategic Command Center</title>
+<style>
+:root{
+  --bg:#0d0e10; --bg2:#121316; --card:#17191d; --card2:#1d2025; --line:#272a30; --line2:#32363d;
+  --text:#ebe8e1; --text2:#b4b1aa; --muted:#7f838b;
+  --accent:#c8a86b; --accent-soft:rgba(200,168,107,.12); --accent-line:rgba(200,168,107,.32);
+  --ok:#86b79d; --warn:#d6a85c; --bad:#d27d74; --info:#86a3c9; --none:#6d7179;
+  --r:16px; --r-sm:10px;
+  --serif:ui-serif,"New York","Iowan Old Style",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --sab:env(safe-area-inset-bottom,0px); --sat:env(safe-area-inset-top,0px);
+}
+[data-contour="pers"]{ --accent:#93a7d4; --accent-soft:rgba(147,167,212,.12); --accent-line:rgba(147,167,212,.34); --bg:#0d0e12; }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--sans);-webkit-text-size-adjust:100%;overflow-x:hidden}
+body{min-height:100vh}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em}
+.serif{font-family:var(--serif)}
+
+/* каркас */
+.app{display:block;min-height:100vh}
+.side{display:none}
+.top{flex-wrap:wrap;position:sticky;top:0;z-index:20;background:rgba(13,14,16,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);padding:calc(10px + var(--sat)) 16px 10px;display:flex;align-items:center;gap:12px}
+.brand{flex:1;font-family:var(--serif);font-size:17px;letter-spacing:.01em;white-space:nowrap}
+.brand b{color:var(--accent);font-weight:600}
+.spacer{display:none}
+.top .seg{order:3;width:100%;display:flex}.top .seg button{flex:1}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{padding:6px 12px;border-radius:999px;font-size:13px;color:var(--text2);min-height:30px}
+.seg button.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-line)}
+.iconbtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);color:var(--text2)}
+.iconbtn:active{background:var(--card)}
+.iconbtn svg.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+main{padding:16px 16px calc(96px + var(--sab));max-width:1180px;margin:0 auto}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:rgba(18,19,22,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);padding:6px 6px calc(6px + var(--sab))}
+.bar button{flex:1;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--muted);border-radius:12px}
+.bar button.on{color:var(--accent)}
+.bar svg,.side svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--card);border-top:1px solid var(--line2);border-radius:20px 20px 0 0;padding:14px 12px calc(14px + var(--sab));display:none}
+.sheet.open,.sheet-bg.open{display:block}
+.sheet button.row{display:flex;gap:14px;align-items:center;width:100%;padding:14px 12px;min-height:50px;border-radius:12px;color:var(--text);text-align:left}
+.sheet button.row:active{background:var(--card2)}
+.sheet svg{width:21px;height:21px;fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* типографика и карточки */
+.pagehead{margin:6px 0 16px}
+.pagehead h1{font-family:var(--serif);font-size:28px;line-height:1.15;font-weight:500}
+.pagehead p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.crumb{display:inline-flex;align-items:center;gap:6px;color:var(--text2);font-size:13px;margin-bottom:10px;min-height:32px}
+.sec{margin:26px 0 10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.sec h2{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.sec .more{font-size:13px;color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.card.tap{cursor:pointer;transition:border-color .15s,background .15s} .card.tap:hover{border-color:var(--line2);background:var(--card2)}
+.stack{display:grid;gap:10px}
+.grid2{display:grid;gap:10px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;text-align:left;width:100%}
+.kpi .n{font-family:var(--serif);font-size:38px;line-height:1;font-weight:400;letter-spacing:-.02em}
+.kpi .l{margin-top:8px;font-size:12px;color:var(--text2)}
+.kpi .s{margin-top:2px;font-size:12px;color:var(--muted)}
+.kpi.warn .n{color:var(--warn)} .kpi.bad .n{color:var(--bad)}
+.row2{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.row2>*{min-width:0}
+.row2>.badge,.row2>.tag,.row2>.lvl{flex:0 1 46%}
+.title{font-size:15px;font-weight:550;line-height:1.35}
+.sub{color:var(--text2);font-size:13px;margin-top:3px}
+.mut{color:var(--muted);font-size:12.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:10px;align-items:center}
+.tag{font-size:11.5px;color:var(--text2);border:1px solid var(--line2);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.tag.p1{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.badge{display:inline-flex;align-items:flex-start;gap:6px;font-size:11.5px;line-height:1.35;border-radius:12px;padding:3px 10px 3px 8px;border:1px solid;max-width:100%;text-align:left}
+.badge::before{margin-top:4px;flex:none}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.badge.confirmed{color:var(--ok);border-color:rgba(134,183,157,.35)}
+.badge.check{color:var(--warn);border-color:rgba(214,168,92,.38)}
+.badge.assumption{color:var(--info);border-color:rgba(134,163,201,.38)}
+.badge.assumption::before{background:transparent;border:1.5px solid currentColor}
+.badge.missing{color:var(--none);border-color:var(--line2);border-style:dashed}
+.badge.missing::before{background:transparent;border:1.5px dashed currentColor}
+.badge.neutral{color:var(--text2);border-color:var(--line2)}
+.badge.neutral::before{background:var(--none)}
+.lvl{font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 8px;letter-spacing:.02em}
+.lvl.l3{color:var(--bad);background:rgba(210,125,116,.12)} .lvl.l2{color:var(--warn);background:rgba(214,168,92,.12)} .lvl.l1{color:var(--ok);background:rgba(134,183,157,.12)} .lvl.l0{color:var(--none);background:var(--card2)}
+.empty{color:var(--none);font-style:italic}
+.kv{display:grid;gap:12px;margin:0}
+.kv div{display:grid;gap:3px}
+.kv dt{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.kv dd{margin:0;font-size:14px;color:var(--text);word-break:break-word}
+.due.overdue{color:var(--bad)} .due.none{color:var(--none)}
+.fresh{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg2);font-size:12.5px;color:var(--text2)}
+.fresh .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)} .fresh.stale .dot{background:var(--warn)} .fresh.unk .dot{background:var(--none)}
+.attn{display:flex;gap:12px;align-items:flex-start}
+.attn .bar3{width:3px;align-self:stretch;border-radius:3px;background:var(--none);flex:none}
+.attn.l3 .bar3{background:var(--bad)} .attn.l2 .bar3{background:var(--warn)} .attn.l1 .bar3{background:var(--info)}
+.attn .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:0 -16px 12px;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line2);border-radius:999px;padding:7px 14px;font-size:13px;color:var(--text2);min-height:36px}
+.chip.on{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.tl{margin:0;padding:0;list-style:none;border-left:1px solid var(--line2);margin-left:6px}
+.tl li{position:relative;padding:0 0 16px 16px}
+.tl li::before{content:"";position:absolute;left:-4px;top:7px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.tl .d{font-size:12px;color:var(--muted)}
+.src{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.src:last-child{border-bottom:0}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;color:var(--muted);font-weight:500;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;padding:8px 10px;border-bottom:1px solid var(--line2)}
+table.t td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tablewrap{overflow-x:auto}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--text);font-size:13px;margin-bottom:14px}
+.banner.warn{border-color:rgba(214,168,92,.38);background:rgba(214,168,92,.08)}
+.err{padding:28px 16px;text-align:center;color:var(--text2)}
+.err h2{font-family:var(--serif);font-weight:500;font-size:22px;color:var(--text);margin-bottom:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--accent-line);color:var(--accent);background:var(--accent-soft);margin-top:14px}
+.skeleton{height:86px;border-radius:var(--r);background:linear-gradient(90deg,var(--card),var(--card2),var(--card));background-size:200% 100%;animation:sh 1.4s infinite;margin-bottom:10px}
+@keyframes sh{to{background-position:-200% 0}}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+/* компьютер */
+@media (min-width:900px){
+  .app{display:grid;grid-template-columns:248px 1fr;align-items:start}
+  .side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:22px 14px;border-right:1px solid var(--line);background:var(--bg2)}
+  .side .brand{padding:0 10px 18px;font-size:19px}
+  .side .seg{margin:0 6px 18px;display:flex} .side .seg button{flex:1}
+  .side nav{display:grid;gap:2px}
+  .side nav button{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;color:var(--text2);text-align:left;font-size:14px;min-height:42px}
+  .side nav button:hover{background:var(--card)} .side nav button.on{background:var(--accent-soft);color:var(--accent)}
+  .side .foot{margin-top:auto;padding:12px 10px;font-size:12px;color:var(--muted)}
+  .top .brand,.top .seg{display:none} .top{justify-content:flex-end;padding:12px 28px;flex-wrap:nowrap}
+  .bar{display:none} main{padding:8px 28px 56px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .grid2{grid-template-columns:1fr 1fr}
+  .cols{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
+  .pagehead h1{font-size:34px}
+}
+@media (max-width:899px){ .cols>div{margin-bottom:0} .hide-m{display:none} }
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-contour="corp">
+<div class="app" id="app">
+  <aside class="side" id="side"></aside>
+  <div>
+    <header class="top">
+      <div class="brand">Strategic <b>Command</b> Center</div>
+      <div class="spacer"></div>
+      <div class="seg" id="segTop"></div>
+      <button class="iconbtn" id="refresh" aria-label="Обновить данные" title="Обновить данные"><svg id="refreshIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg></button>
+    </header>
+    <main id="view" aria-live="polite"></main>
+  </div>
+</div>
+<nav class="bar" id="bar" aria-label="Разделы"></nav>
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ───────── утилиты ───────── */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function $(id){return document.getElementById(id);}
+var ICON={
+  home:'<path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>',
+  projects:'<path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/>',
+  talks:'<path d="M4 5h16v11H9l-5 4z"/>',
+  actions:'<path d="M5 12l4 4 10-10"/>',
+  risks:'<path d="M12 3l10 18H2zM12 10v5M12 18v.4"/>',
+  decisions:'<path d="M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2zM9 8h6M9 12h6"/>',
+  sources:'<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>',
+  data:'<path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/>',
+  capital:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  more:'<path d="M5 12h.01M12 12h.01M19 12h.01"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>'
+};
+function ico(n){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+ICON[n]+'</svg>';}
+var ST={confirmed:'Подтверждено',check:'Требует проверки',assumption:'Цель / предположение',missing:'Нет данных',neutral:'Запись'};
+function badge(st,label){ if(!st) return ''; return '<span class="badge '+esc(st)+'">'+esc(label||ST[st]||'')+'</span>'; }
+function val(v,empty){ return (v===''||v==null)?'<span class="empty">'+esc(empty||'Нет данных')+'</span>':esc(v); }
+function link(url,label){ return url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label||'Открыть')+' ↗</a>':''; }
+function lvl(rank,text){ return '<span class="lvl l'+rank+'">'+esc(text||'Уровень не указан')+'</span>'; }
+function dueHtml(d){ if(!d) return ''; var c=d.state==='overdue'?'overdue':(d.state==='none'?'none':''); var t=d.state==='overdue'?d.label+' · просрочено на '+d.days+' дн.':d.label; return '<span class="due '+c+'">'+esc(t)+'</span>'; }
+function find(list,key,id){ for(var i=0;i<(list||[]).length;i++) if(String(list[i][key]).toUpperCase()===String(id).toUpperCase()) return list[i]; return null; }
+function pname(id){ var p=S.corp?find(S.corp.projects,'id',id):null; return p?p.name:(id||''); }
+function sec(title,more){ return '<div class="sec"><h2>'+esc(title)+'</h2>'+(more||'')+'</div>'; }
+function go(h){ if(location.hash==='#'+h) route(); else location.hash=h; }
+
+/* ───────── состояние ───────── */
+var S={corp:null,pers:null,contour:'corp',loading:{},err:{},filters:{risk:'all',action:'all',talk:'all'}};
+var NAV={
+  corp:[['home','Главная','home'],['projects','Проекты','projects'],['talks','Переговоры','talks'],['actions','Действия','actions'],['risks','Риски','risks'],['decisions','Журнал решений','decisions'],['sources','Источники','sources'],['data','Данные и актуальность','data']],
+  pers:[['p-home','Обзор','home'],['p-projects','Проекты','projects'],['p-capital','Капитал и доли','capital'],['p-conflicts','Конфликты интересов','shield']]
+};
+var BAR={corp:['home','projects','talks','risks','more'],pers:['p-home','p-projects','p-capital','p-conflicts','switch']};
+
+/* ───────── обмен с сервером ───────── */
+function call(fn){
+  return new Promise(function(res,rej){
+    try{ google.script.run.withSuccessHandler(res).withFailureHandler(function(e){rej(e);})[fn](); }
+    catch(e){ rej(e); }
+  });
+}
+function errText(e){ var m=(e&&e.message)?e.message:String(e||''); if(/ACCESS_DENIED/.test(m)) return 'Доступ закрыт. Войдите под учётной записью владельца.'; if(/not found|не найден/i.test(m)) return 'Таблица недоступна для вашей учётной записи.'; return 'Не удалось прочитать данные: '+m.replace(/^Error:\s*/,''); }
+function ensure(kind,force){
+  var key=kind==='pers'?'pers':'corp', fn=kind==='pers'?'getPersonalData':'getCorporateData';
+  if(S[key]&&!force) return Promise.resolve();
+  S.loading[key]=true; S.err[key]=null; spin(true); paint();
+  return call(fn).then(function(d){ S[key]=d; S.loading[key]=false; }).catch(function(e){ S.loading[key]=false; S.err[key]=errText(e); }).then(function(){ spin(false); paint(); });
+}
+function spin(on){ var i=$('refreshIcon'); if(i) i.setAttribute('class',on?'spin':''); }
+
+/* ───────── оболочка ───────── */
+function route(){
+  var h=(location.hash||'#home').slice(1); var parts=h.split('/'); var v=parts[0]||'home';
+  var contour=/^p-/.test(v)?'pers':'corp';
+  if(contour!==S.contour){ switchContour(contour,true); }
+  S.view=v; S.param=parts[1]||null;
+  ensure(contour).then(function(){ window.scrollTo(0,0); });
+  paint();
+}
+function switchContour(c,silent){
+  S.contour=c; document.body.setAttribute('data-contour',c);
+  if(c==='corp') S.pers=null; // личные данные не удерживаются в памяти при работе в корпоративном контуре
+  if(c==='pers') S.corp=null; // и наоборот
+  if(!silent) go(c==='pers'?'p-home':'home');
+}
+function segHtml(){ return '<button data-c="corp" class="'+(S.contour==='corp'?'on':'')+'">Корпоративный</button><button data-c="pers" class="'+(S.contour==='pers'?'on':'')+'">Личный</button>'; }
+function paintShell(){
+  var items=NAV[S.contour], cur=S.view||'home';
+  var active=function(id){ return cur===id||(cur==='project'&&id==='projects'); };
+  $('side').innerHTML='<div class="brand">Strategic <b>Command</b> Center</div><div class="seg">'+segHtml()+'</div><nav>'+
+    items.map(function(n){return '<button data-go="'+n[0]+'" class="'+(active(n[0])?'on':'')+'">'+ico(n[2])+'<span>'+esc(n[1])+'</span></button>';}).join('')+'</nav>'+
+    '<div class="foot">'+(S.contour==='pers'?'Личный контур. Не смешивается с корпоративным.':'Только чтение. Таблицы не изменяются.')+'</div>';
+  $('segTop').innerHTML=segHtml();
+  var labels={};items.forEach(function(n){labels[n[0]]=[n[1],n[2]];});
+  var short={home:'Главная','p-home':'Обзор',projects:'Проекты','p-projects':'Проекты',talks:'Переговоры',risks:'Риски','p-capital':'Капитал','p-conflicts':'Конфликты'};
+  $('bar').innerHTML=BAR[S.contour].map(function(id){
+    if(id==='more') return '<button data-more="1" class="'+(['actions','decisions','sources','data'].indexOf(cur)>=0?'on':'')+'">'+ico('more')+'<span>Ещё</span></button>';
+    if(id==='switch') return '<button data-c="corp">'+ico('back')+'<span>Корпоратив</span></button>';
+    var l=labels[id]; return '<button data-go="'+id+'" class="'+(active(id)?'on':'')+'">'+ico(l[1])+'<span>'+esc(short[id]||l[0])+'</span></button>';
+  }).join('');
+  if(S.contour==='corp'){
+    $('sheet').innerHTML=[['actions','Действия','actions'],['decisions','Журнал решений','decisions'],['sources','Источники','sources'],['data','Данные и актуальность','data'],['p-home','Личный кабинет','shield']].map(function(n){
+      return '<button class="row" data-go="'+n[0]+'" data-close="1">'+ico(n[2])+'<span>'+esc(n[1])+'</span></button>'; }).join('');
+  }
+}
+function closeSheet(){ $('sheet').classList.remove('open'); $('sheetBg').classList.remove('open'); }
+
+function paint(){
+  paintShell();
+  var key=S.contour==='pers'?'pers':'corp', v=$('view');
+  if(S.loading[key]&&!S[key]){ v.innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>'; return; }
+  if(S.err[key]&&!S[key]){ v.innerHTML='<div class="err"><h2>Данные недоступны</h2><div>'+esc(S.err[key])+'</div><button class="btn" id="retry">Повторить</button></div>'; return; }
+  if(!S[key]){ v.innerHTML=''; return; }
+  var fn=VIEWS[S.view]||VIEWS[S.contour==='pers'?'p-home':'home'];
+  var html='';
+  try{ html=fn(S[key]); }catch(e){ html='<div class="err"><h2>Ошибка отображения</h2><div>'+esc(e&&e.message)+'</div></div>'; }
+  v.innerHTML=html;
+}
+
+/* ───────── корпоративные разделы ───────── */
+function freshHtml(m){
+  var cls='fresh', parts=[];
+  parts.push('Прочитано: <b>'+esc(m.readAtLabel)+'</b>');
+  if(m.lastSync){ if(m.lastSync.stale) cls+=' stale'; parts.push('Последняя запись журнала: <b>'+esc(m.lastSync.date)+'</b>'+(m.lastSync.ageDays?' ('+m.lastSync.ageDays+' дн. назад)':'')); }
+  else { cls+=' unk'; parts.push('Журнал синхронизации: нет датированных записей'); }
+  if(m.auditDate) parts.push('Дата аудита по таблице: <b>'+esc(m.auditDate)+'</b>');
+  return '<div class="'+cls+'"><span class="dot"></span>'+parts.map(function(p){return '<span>'+p+'</span>';}).join('')+'</div>';
+}
+function warnHtml(m){ return m.warnings&&m.warnings.length?'<div class="banner warn"><div>'+m.warnings.map(esc).join('<br>')+'</div></div>':''; }
+function kpi(n,l,s,go_,cls){ return '<button class="kpi '+(cls||'')+'" data-go="'+go_+'"><div class="n">'+esc(n)+'</div><div class="l">'+esc(l)+'</div><div class="s">'+esc(s)+'</div></button>'; }
+
+function projectCard(p){
+  return '<div class="card tap" data-go="project/'+esc(p.id)+'"><div class="row2"><div><div class="title">'+esc(p.name)+'</div>'+
+    '<div class="sub">'+(p.next?esc(p.next):'<span class="empty">Следующее действие не указано</span>')+'</div></div>'+
+    '<span class="tag '+(/^p1$/i.test(p.priority)?'p1':'')+'">'+esc(p.priority||'—')+'</span></div>'+
+    '<div class="meta">'+badge(p.stState,p.state||'Состояние не указано')+(p.checked?badge(p.stChecked,'Проверено: '+p.checked):'')+
+    '<span class="mut">'+p.openActions+' действ. · '+p.openRisks+' риск.</span></div></div>';
+}
+function attnHtml(a){
+  var go_=a.ref.type==='project'?'project/'+a.ref.id:a.ref.type==='risk'?'risks':a.ref.type==='action'?'actions':a.ref.type==='talk'?'talks':'data';
+  return '<div class="card tap attn l'+a.level+'" data-go="'+go_+'"><div class="bar3"></div><div><div class="k">'+esc(a.kind)+(a.projectId&&pname(a.projectId)!==a.projectId?' · '+esc(pname(a.projectId)):'')+'</div><div class="title">'+esc(a.title)+'</div>'+(a.detail?'<div class="sub">'+esc(a.detail)+'</div>':'')+'</div></div>';
+}
+function actionRow(a){
+  return '<div class="card"><div class="title">'+esc(a.title)+'</div><div class="sub">'+esc(pname(a.projectId))+'</div><div class="meta">'+
+    dueHtml(a.due)+badge(a.open?'neutral':'confirmed',a.status||'Статус не указан')+'<span class="mut">'+(a.owner?esc(a.owner):'ответственный не указан')+'</span>'+(a.basis?'<span class="mut">· основание: '+esc(a.basis)+'</span>':'')+'</div></div>';
+}
+function talkCard(t){
+  return '<div class="card"><div class="row2"><div><div class="title">'+esc(t.contact||'Контакт не указан')+'</div><div class="sub">'+esc(t.org)+' · '+esc(pname(t.projectId))+'</div></div>'+badge(t.st,t.status||'')+'</div>'+
+  '<dl class="kv" style="margin-top:12px"><div><dt>Последний подтверждённый факт'+(t.factDate?' · '+esc(t.factDate):'')+'</dt><dd>'+val(t.fact)+(t.fact&&!t.factDate?' <span class="mut">(дата не указана)</span>':'')+'</dd></div>'+
+  '<div><dt>Чей ход / ожидаемый ответ</dt><dd>'+val(t.turn)+'</dd></div><div><dt>Следующий шаг</dt><dd>'+val(t.next)+'</dd></div>'+
+  '<div><dt>Срок контакта</dt><dd>'+dueHtml(t.due)+'</dd></div><div><dt>Первоисточник</dt><dd>'+(t.source.url?link(t.source.url,t.source.kind):(t.source.text?esc(t.source.text):'<span class="empty">Нет данных</span>'))+'</dd></div></dl></div>';
+}
+function riskCard(r,opt){
+  return '<div class="card"><div class="row2"><div class="title">'+esc(r.title)+'</div>'+lvl(r.rank,r.level)+'</div>'+
+  '<div class="sub">'+esc(pname(r.projectId))+(r.category?' · '+esc(r.category):'')+'</div>'+
+  '<dl class="kv" style="margin-top:12px"><div><dt>Основание</dt><dd>'+val(r.basis)+'</dd></div><div><dt>План действий</dt><dd>'+val(r.action)+'</dd></div>'+
+  (opt.riskProbability?'<div><dt>Вероятность</dt><dd>'+val(r.probability)+'</dd></div>':'')+(opt.riskImpact?'<div><dt>Последствия</dt><dd>'+val(r.impact)+'</dd></div>':'')+
+  '<div><dt>Ответственный</dt><dd>'+val(r.owner)+'</dd></div><div><dt>Срок</dt><dd>'+dueHtml(r.due)+'</dd></div></dl>'+
+  '<div class="meta">'+badge(r.open?'check':'confirmed',r.state||'Состояние не указано')+(r.source.url?link(r.source.url,'Первоисточник'):(r.source.text?'<span class="mut">Источник: '+esc(r.source.text)+'</span>':''))+'</div></div>';
+}
+function decisionCard(d){
+  return '<div class="card"><div class="row2"><div class="title">'+esc(d.decision)+'</div>'+badge(d.st,d.status||'')+'</div>'+
+  '<div class="sub">'+esc(d.date)+' · '+esc(d.projectId&&find(S.corp.projects,'id',d.projectId)?pname(d.projectId):(d.projectId||'без проекта'))+' · '+esc(d.id)+'</div>'+
+  '<dl class="kv" style="margin-top:12px"><div><dt>Основание</dt><dd>'+val(d.reason)+'</dd></div><div><dt>Альтернативы</dt><dd>'+val(d.alternatives)+'</dd></div>'+
+  '<div><dt>Условие пересмотра</dt><dd>'+val(d.review)+'</dd></div><div><dt>Ответственный</dt><dd>'+val(d.owner)+'</dd></div></dl></div>';
+}
+
+var VIEWS={};
+VIEWS.home=function(d){
+  var k=d.kpi, today=new Date();
+  var open=d.actions.filter(function(a){return a.open;}).sort(function(a,b){ if(a.due.iso&&b.due.iso) return a.due.iso<b.due.iso?-1:1; if(a.due.iso) return -1; if(b.due.iso) return 1; return 0; }).slice(0,4);
+  var att=d.attention.slice(0,5);
+  return '<div class="pagehead"><h1>Обзор</h1><p>Корпоративный контур · '+esc(d.meta.title||'')+'</p></div>'+
+  freshHtml(d.meta)+'<div style="height:12px"></div>'+warnHtml(d.meta)+
+  '<div class="kpis">'+
+    kpi(k.projects,'Проекты в реестре','P1: '+k.p1,'projects')+
+    kpi(k.actionsOpen,'Открытые действия',k.actionsOpen?('без срока: '+k.actionsNoDue):'нет открытых','actions',k.actionsOverdue?'bad':'')+
+    kpi(k.talks,'Переговоры','на проверке: '+k.talksCheck,'talks',k.talksCheck?'warn':'')+
+    kpi(k.risksOpen,'Открытые риски','высокий уровень: '+k.risksHigh,'risks',k.risksHigh?'bad':'')+
+  '</div>'+
+  '<div class="cols"><div>'+
+    sec('Требует внимания','<span class="mut">'+d.attention.length+'</span>')+
+    '<div class="stack">'+(att.length?att.map(attnHtml).join(''):'<div class="card"><span class="empty">Подтверждённых критических событий нет</span></div>')+'</div>'+
+    sec('Ближайшие действия','<button class="more" data-go="actions">Все</button>')+
+    '<div class="stack">'+(open.length?open.map(actionRow).join(''):'<div class="card"><span class="empty">Открытых действий нет</span></div>')+'</div>'+
+    (k.actionsNoDue? '<p class="hint">У '+k.actionsNoDue+' из '+k.actionsOpen+' открытых действий срок не установлен. Это не просрочка: срок в таблице не задан.</p>':'')+
+  '</div><div>'+
+    sec('Стратегические проекты','<button class="more" data-go="projects">Все</button>')+
+    '<div class="stack">'+d.projects.map(projectCard).join('')+'</div>'+
+    sec('Журнал решений','<button class="more" data-go="decisions">Все</button>')+
+    '<div class="stack">'+d.decisions.slice(0,3).map(function(x){return '<div class="card"><div class="title">'+esc(x.decision)+'</div><div class="meta">'+badge(x.st,x.status)+'<span class="mut">'+esc(x.date)+'</span></div></div>';}).join('')+'</div>'+
+  '</div></div>';
+};
+VIEWS.projects=function(d){
+  return '<div class="pagehead"><h1>Стратегические проекты</h1><p>'+d.projects.length+' в реестре · приоритет и состояние — из таблицы</p></div><div class="grid2">'+d.projects.map(projectCard).join('')+'</div>';
+};
+VIEWS.project=function(d){
+  var p=find(d.projects,'id',S.param);
+  if(!p) return '<div class="err"><h2>Проект не найден</h2><button class="btn" data-go="projects">К списку</button></div>';
+  var acts=p.actionIds.map(function(id){return find(d.actions,'id',id);});
+  var talks=p.talkIds.map(function(id){return find(d.talks,'id',id);});
+  var risks=p.riskIds.map(function(id){return find(d.risks,'id',id);});
+  return '<button class="crumb" data-go="projects">'+ico('back').replace('<svg','<svg style="width:16px;height:16px"')+' Проекты</button>'+
+  '<div class="pagehead"><h1>'+esc(p.name)+'</h1><p>'+esc(p.id)+' · строка '+p.row+' в таблице</p></div>'+
+  '<div class="card"><div class="meta" style="margin-top:0"><span class="tag '+(/^p1$/i.test(p.priority)?'p1':'')+'">'+esc(p.priority||'Приоритет не указан')+'</span>'+badge(p.stState,p.state||'Состояние не указано')+badge(p.stChecked,'Проверено: '+(p.checked||'нет данных'))+'</div>'+
+  '<dl class="kv" style="margin-top:14px"><div><dt>Следующее действие</dt><dd>'+val(p.next)+'</dd></div><div><dt>Ответственные (по реестрам)</dt><dd>'+(p.owners.length?esc(p.owners.join(', ')):'<span class="empty">Нет данных</span>')+'</dd></div></dl></div>'+
+  '<div class="cols"><div>'+
+  sec('Действия',String(acts.length))+'<div class="stack">'+(acts.length?acts.map(actionRow).join(''):'<div class="card"><span class="empty">Действий нет</span></div>')+'</div>'+
+  sec('Переговоры',String(talks.length))+'<div class="stack">'+(talks.length?talks.map(talkCard).join(''):'<div class="card"><span class="empty">Контактов нет</span></div>')+'</div>'+
+  sec('Риски',String(risks.length))+'<div class="stack">'+(risks.length?risks.map(function(r){return riskCard(r,d.optional);}).join(''):'<div class="card"><span class="empty">Рисков в реестре нет</span></div>')+'</div>'+
+  '</div><div>'+
+  sec('История')+'<div class="card">'+(p.history.length?'<ul class="tl">'+p.history.map(function(h){return '<li><div class="d">'+esc(h.date||'без даты')+' · '+esc(h.kind)+'</div><div>'+esc(h.text)+'</div></li>';}).join('')+'</ul>':'<span class="empty">Записей с привязкой к проекту нет</span>')+'</div>'+
+  sec('Источники')+'<div class="card">'+(p.sources.length?p.sources.map(function(s){return '<div class="src"><div><div class="title" style="font-size:14px">'+esc(s.label)+'</div><div class="mut">'+esc(s.kind||'')+(s.text?' · '+esc(s.text):'')+'</div></div><div>'+(s.url?link(s.url,'Открыть'):badge('check','Нет ссылки'))+'</div></div>';}).join(''):'<span class="empty">Источники не указаны</span>')+'</div>'+
+  '</div></div>';
+};
+VIEWS.talks=function(d){
+  var f=S.filters.talk, list=d.talks.filter(function(t){return f==='all'||(f==='check'&&t.st==='check')||(f==='ok'&&t.st==='confirmed');});
+  return '<div class="pagehead"><h1>Контроль переговоров</h1><p>Источник: вкладка «Контроль переговоров». Срок не указан ≠ просрочка.</p></div>'+
+  chips('talk',[['all','Все'],['check','На проверке'],['ok','Сверено']])+
+  '<div class="grid2">'+(list.length?list.map(talkCard).join(''):'<div class="card"><span class="empty">Нет записей</span></div>')+'</div>';
+};
+VIEWS.actions=function(d){
+  var f=S.filters.action, list=d.actions.filter(function(a){return f==='all'||(f==='open'&&a.open)||(f==='nodue'&&a.open&&a.due.state==='none');});
+  return '<div class="pagehead"><h1>Действия</h1><p>'+d.kpi.actionsOpen+' открыто · без срока: '+d.kpi.actionsNoDue+' · просрочено: '+d.kpi.actionsOverdue+'</p></div>'+
+  chips('action',[['all','Все'],['open','Открытые'],['nodue','Без срока']])+
+  '<div class="grid2">'+(list.length?list.map(actionRow).join(''):'<div class="card"><span class="empty">Нет записей</span></div>')+'</div>';
+};
+VIEWS.risks=function(d){
+  var f=S.filters.risk, list=d.risks.filter(function(r){return f==='all'||(f==='high'&&r.rank===3)||(f==='mid'&&r.rank===2)||(f==='low'&&r.rank===1);}).sort(function(a,b){return b.rank-a.rank;});
+  var note=(!d.optional.riskProbability||!d.optional.riskImpact)?'<div class="banner"><div>В таблице нет столбцов '+(!d.optional.riskProbability?'«Вероятность»':'')+(!d.optional.riskProbability&&!d.optional.riskImpact?' и ':'')+(!d.optional.riskImpact?'«Последствия»':'')+'. Оценки не выводятся и не придумываются; показан только уровень из таблицы.</div></div>':'';
+  return '<div class="pagehead"><h1>Риски</h1><p>'+d.kpi.risksOpen+' открыто · высокий уровень: '+d.kpi.risksHigh+'</p></div>'+note+
+  chips('risk',[['all','Все'],['high','Высокий'],['mid','Средний'],['low','Низкий']])+
+  '<div class="grid2">'+(list.length?list.map(function(r){return riskCard(r,d.optional);}).join(''):'<div class="card"><span class="empty">Нет записей</span></div>')+'</div>';
+};
+VIEWS.decisions=function(d){
+  return '<div class="pagehead"><h1>Журнал решений</h1><p>Источник: вкладка «Журнал решений». Историческая вкладка «Решения» не используется.</p></div><div class="grid2">'+d.decisions.map(decisionCard).join('')+'</div>';
+};
+VIEWS.sources=function(d){
+  return '<div class="pagehead"><h1>Источники</h1><p>Документы и письма, на которые опираются записи</p></div>'+
+  '<div class="card">'+d.sources.map(function(s){return '<div class="src"><div><div class="title" style="font-size:14px">'+esc(s.doc||s.type)+'</div><div class="mut">'+esc(pname(s.projectId))+' · '+esc(s.type)+'</div><div style="margin-top:6px">'+badge(s.st,s.status||'Статус не указан')+'</div></div><div>'+(s.url?link(s.url,'Открыть'):'<span class="mut">'+esc(s.urlText||'нет ссылки')+'</span>')+'</div></div>';}).join('')+'</div>'+
+  sec('Инвентаризация источников')+'<div class="stack">'+d.inventory.map(function(i){return '<div class="card"><div class="row2"><div class="title">'+esc(i.group)+'</div>'+badge(i.st,i.status)+'</div><div class="sub">'+esc(i.found)+'</div><dl class="kv" style="margin-top:10px"><div><dt>Потенциальные повторы</dt><dd>'+val(i.dup)+'</dd></div><div><dt>Действие</dt><dd>'+val(i.action)+'</dd></div></dl><div class="meta"><span class="tag">Уверенность: '+esc(i.confidence||'нет данных')+'</span><span class="tag">Проверено: '+esc(i.checked||'нет данных')+'</span>'+(i.canonical.url?link(i.canonical.url,'Канонический источник'):'')+'</div></div>';}).join('')+'</div>';
+};
+VIEWS.data=function(d){
+  var m=d.meta;
+  var integ=[['Google Sheets','Подключено · только чтение','confirmed'],['Google Drive','Не подключено · этап 2 (ссылки из таблиц открываются, содержимое не читается)','missing'],['Gmail','Не подключено · этап 2','missing'],['Google Calendar','Не подключено · этап 2','missing'],['Автоматическая синхронизация','Не доказана этой панелью. Ниже — только записи из журнала таблицы.','check']];
+  return '<div class="pagehead"><h1>Данные и актуальность</h1><p>Что прочитано, когда и что не подключено</p></div>'+freshHtml(m)+'<div style="height:12px"></div>'+warnHtml(m)+
+  sec('Подключения')+'<div class="card">'+integ.map(function(i){return '<div class="src"><div class="title" style="font-size:14px">'+esc(i[0])+'</div><div style="text-align:right">'+badge(i[2],i[1])+'</div></div>';}).join('')+'</div>'+
+  (m.automation?'<p class="hint">Запись в панели таблицы об автоматизации («'+esc(m.automation.text)+'») — слова таблицы, панель их не проверяет.</p>':'')+
+  sec('Сверка ручной панели с реестрами')+'<div class="card tablewrap"><table class="t"><tr><th>Показатель</th><th>В панели</th><th>По реестрам</th><th></th></tr>'+d.reconcile.map(function(r){return '<tr><td>'+esc(r.label)+'</td><td>'+esc(r.sheet)+'</td><td>'+esc(r.computed)+'</td><td>'+badge(r.match?'confirmed':'check',r.match?'Совпало':'Расхождение')+'</td></tr>';}).join('')+'</table></div>'+
+  sec('Прочитанные вкладки')+'<div class="card tablewrap"><table class="t"><tr><th>Вкладка</th><th>Строк</th><th></th></tr>'+m.tabs.map(function(t){return '<tr><td>'+esc(t.name)+'</td><td>'+t.rows+'</td><td>'+(t.ok?(t.missingColumns.length?badge('check','Нет столбцов: '+t.missingColumns.length):badge('confirmed','Прочитана')):badge('check','Не найдена'))+'</td></tr>';}).join('')+'</table></div>'+
+  '<p class="hint">Исторические вкладки «Переговоры» и «Решения» не читаются и не изменяются.</p>'+
+  sec('Журнал синхронизации')+'<div class="stack">'+d.sync.slice().reverse().map(function(s){return '<div class="card"><div class="row2"><div class="title">'+esc(s.type)+'</div><span class="mut">'+esc(s.date)+'</span></div><div class="sub">'+esc(s.source)+'</div><div class="meta">'+badge(s.st,s.result||'Итог не указан')+'</div><dl class="kv" style="margin-top:10px"><div><dt>Проверка</dt><dd>'+val(s.check)+'</dd></div><div><dt>Изменения в реестре</dt><dd>'+val(s.changes)+'</dd></div><div><dt>Примечание</dt><dd>'+val(s.note)+'</dd></div></dl></div>';}).join('')+'</div>';
+};
+
+function chips(key,opts){ return '<div class="chips">'+opts.map(function(o){return '<button class="chip '+(S.filters[key]===o[0]?'on':'')+'" data-filter="'+key+':'+o[0]+'">'+esc(o[1])+'</button>';}).join('')+'</div>'; }
+
+/* ───────── личный контур ───────── */
+function sumRow(label,x,fallback){ return '<div class="card"><div class="row2"><div class="mut" style="text-transform:uppercase;letter-spacing:.08em;font-size:11.5px">'+esc(label)+'</div>'+(x?badge(x.st):badge('missing'))+'</div><div class="title" style="margin-top:6px;font-size:16px">'+(x&&x.value?esc(x.value):'<span class="empty">'+esc(fallback||'Нет данных')+'</span>')+'</div>'+(x&&x.note?'<div class="sub">'+esc(x.note)+'</div>':'')+'</div>'; }
+function pBanner(){ return '<div class="banner"><div>Личный контур. Данные отдельной таблицы; корпоративные контакты и активы здесь не показываются и не записываются как личные возможности.</div></div>'; }
+VIEWS['p-home']=function(d){
+  var s=d.summary;
+  return '<div class="pagehead"><h1>Личный кабинет</h1><p>Прочитано: '+esc(d.meta.readAtLabel)+' · '+esc(d.meta.title||'')+'</p></div>'+pBanner()+warnHtml(d.meta)+
+  sec('Пятилетняя стратегия капитала')+'<div class="grid2">'+sumRow('Цель',s.goal)+sumRow('Инвестиционный капитал',s.capital,'Неизвестен')+sumRow('Подтверждённых сделок',s.deals)+sumRow('Следующий шаг',s.next)+'</div>'+
+  sec('Правило')+sumRow('Разделение контуров',s.rule)+
+  sec('Что ещё не определено','<span class="mut">'+d.gaps.length+'</span>')+'<div class="card">'+(d.gaps.length?'<ul style="margin:0;padding-left:18px;color:var(--text2);font-size:13.5px;line-height:1.7">'+d.gaps.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul><p class="hint">Пробелы выделены автоматически по пустым и «неизвестным» полям. Значения не оценивались и не подставлялись.</p>':'<span class="empty">Пробелов в заполненных полях нет</span>')+'</div>';
+};
+VIEWS['p-projects']=function(d){
+  return '<div class="pagehead"><h1>Личные проекты</h1><p>Включая архитектуру дома</p></div>'+pBanner()+
+  '<div class="stack">'+(d.projects.length?d.projects.map(function(p){
+    return '<div class="card"><div class="row2"><div><div class="title">'+esc(p.name)+'</div><div class="sub">'+esc(p.id)+'</div></div>'+badge(p.stState,p.state||'Состояние не указано')+'</div>'+
+    '<dl class="kv" style="margin-top:12px"><div><dt>Следующее действие</dt><dd>'+val(p.next)+'</dd></div></dl>'+
+    (p.actions.length?'<div class="sec" style="margin:16px 0 6px"><h2>Действия</h2></div>'+p.actions.map(function(a){return '<div class="src"><div>'+esc(a.title)+'<div class="mut">'+dueHtml(a.due)+'</div></div>'+badge(a.open?'neutral':'confirmed',a.status)+'</div>';}).join(''):'')+
+    (p.decisions.length?'<div class="sec" style="margin:16px 0 6px"><h2>Решения</h2></div>'+p.decisions.map(function(x){return '<div class="src"><div>'+esc(x.decision)+'<div class="mut">'+esc(x.date)+'</div></div>'+badge(x.st,x.status)+'</div>';}).join(''):'')+
+    '<div class="meta">'+(p.folder.url?link(p.folder.url,'Папка проекта'):'<span class="mut">Папка не указана</span>')+'</div></div>';}).join(''):'<div class="card"><span class="empty">Личных проектов нет</span></div>')+'</div>';
+};
+VIEWS['p-capital']=function(d){
+  return '<div class="pagehead"><h1>Капитал и доли</h1><p>Возможности совладения гостиничными проектами</p></div>'+pBanner()+
+  '<div class="stack">'+d.capital.map(function(c){
+    return '<div class="card"><div class="row2"><div class="title">'+esc(c.asset)+'</div>'+badge(c.checkSt,c.check||'Статус не указан')+'</div><div class="sub">'+esc(c.id)+' · '+val(c.stage)+'</div>'+
+    '<dl class="kv" style="margin-top:12px"><div><dt>Тип доли</dt><dd>'+val(c.shareType)+'</dd></div><div><dt>Размер инвестиций</dt><dd>'+val(c.amount)+'</dd></div><div><dt>Источник капитала</dt><dd>'+val(c.capitalSource)+'</dd></div><div><dt>Потенциальная доля</dt><dd>'+val(c.share)+'</dd></div><div><dt>Основание права на долю</dt><dd>'+val(c.basis)+'</dd></div><div><dt>Следующее действие</dt><dd>'+val(c.next)+'</dd></div></dl>'+
+    (c.missing.length?'<div class="meta"><span class="mut">Не определено: '+esc(c.missing.join(', '))+'</span></div>':'')+'</div>';}).join('')+'</div>';
+};
+VIEWS['p-conflicts']=function(d){
+  return '<div class="pagehead"><h1>Контроль конфликтов интересов</h1><p>'+d.conflicts.unresolved+' из '+d.conflicts.total+' записей без завершённой проверки</p></div>'+pBanner()+
+  '<div class="card" style="margin-bottom:10px"><div class="mut" style="text-transform:uppercase;letter-spacing:.08em;font-size:11.5px">Правило</div><div class="title" style="margin-top:6px">'+val(d.summary.rule&&d.summary.rule.value)+'</div><div class="sub">'+esc(d.summary.rule?d.summary.rule.note:'')+'</div></div>'+
+  '<div class="stack">'+d.capital.map(function(c){return '<div class="card"><div class="row2"><div class="title">'+esc(c.asset)+'</div>'+badge(c.conflictSt,c.conflict||'Не оценивался')+'</div><dl class="kv" style="margin-top:10px"><div><dt>Конфликт интересов</dt><dd>'+val(c.conflict)+'</dd></div><div><dt>Основание права на долю</dt><dd>'+val(c.basis)+'</dd></div></dl></div>';}).join('')+'</div>';
+};
+
+/* ───────── события ───────── */
+document.addEventListener('click',function(e){
+  var t=e.target.closest?e.target.closest('[data-go],[data-c],[data-more],[data-filter],#retry,#refresh,#sheetBg'):null;
+  if(!t) return;
+  if(t.id==='retry'||t.id==='refresh'){ ensure(S.contour,true); return; }
+  if(t.id==='sheetBg'){ closeSheet(); return; }
+  if(t.hasAttribute('data-more')){ $('sheet').classList.add('open'); $('sheetBg').classList.add('open'); return; }
+  if(t.hasAttribute('data-c')){ var c=t.getAttribute('data-c'); if(c!==S.contour) switchContour(c); return; }
+  if(t.hasAttribute('data-filter')){ var f=t.getAttribute('data-filter').split(':'); S.filters[f[0]]=f[1]; paint(); return; }
+  if(t.hasAttribute('data-go')){ if(t.hasAttribute('data-close')) closeSheet(); go(t.getAttribute('data-go')); }
+});
+window.addEventListener('hashchange',route);
+route();
+})();
+</script>
+</body>
+</html>
